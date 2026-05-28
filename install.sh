@@ -77,10 +77,13 @@ chmod +x run_agent.sh
 sed -i "s|SERVER_URL = .*|SERVER_URL = \"$SERVER_URL\"|" agent.py
 sed -i "s|SERVER_NAME = .*|SERVER_NAME = \"$CURRENT_HOSTNAME\"|" agent.py
 
-# 8. Crontab Registration (Root)
-echo "Registering to crontab..."
-CRON_JOB="* * * * * $INSTALL_DIR/run_agent.sh >> $INSTALL_DIR/agent.log 2>&1"
-(crontab -l 2>/dev/null | grep -v "$INSTALL_DIR/run_agent.sh"; echo "$CRON_JOB") | crontab -
+# 8. Crontab Registration (System-wide)
+echo "Registering to /etc/cron.d/qewr-agent..."
+echo "* * * * * root $INSTALL_DIR/run_agent.sh >> $INSTALL_DIR/agent.log 2>&1" | tee /etc/cron.d/qewr-agent > /dev/null
+chmod 644 /etc/cron.d/qewr-agent
+
+# Remove old crontab entry if exists
+crontab -l 2>/dev/null | grep -v "$INSTALL_DIR/run_agent.sh" | crontab - || true
 
 echo "=========================================="
 echo "   INSTALLATION COMPLETE!                 "
