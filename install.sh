@@ -85,6 +85,10 @@ chmod 644 /etc/cron.d/qewr-agent
 # Remove old crontab entry if exists
 crontab -l 2>/dev/null | grep -v "$INSTALL_DIR/run_agent.sh" | crontab - || true
 
+# 9. Immediate Execution
+echo "Sending initial ping to monitoring server..."
+$INSTALL_DIR/run_agent.sh || echo "Initial ping failed, but cron will retry."
+
 echo "=========================================="
 echo "   INSTALLATION COMPLETE!                 "
 echo "   - Hostname: $(hostname)"
