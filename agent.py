@@ -8,7 +8,7 @@ import socket
 from datetime import datetime
 
 # --- CONFIGURATION ---
-SERVER_URL = "http://qewr.link/api/ping" # Production
+SERVER_URL = "https://qewr.link/api/ping" # Production
 SERVER_NAME = socket.gethostname()
 
 def get_mac_address():
