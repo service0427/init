@@ -29,7 +29,7 @@ if [[ ! "$CURRENT_HOSTNAME" =~ ^U26-..$ ]]; then
 fi
 
 # 3. Setup Target Info
-SERVER_URL="http://13.125.105.188:8000/api/ping"
+SERVER_URL="http://qewr.link/api/ping"
 echo "Target Monitoring Server: $SERVER_URL"
 echo "Registering as: $CURRENT_HOSTNAME"
 
