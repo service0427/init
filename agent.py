@@ -9,21 +9,43 @@ from datetime import datetime
 
 # --- CONFIGURATION ---
 SERVER_URL = "http://localhost:8000/api/ping" # Local testing
-# SERVER_URL = "http://13.125.105.188:8000/api/ping" # Production (set via env or script)
+# SERVER_URL = "http://13.125.105.188:8000/api/ping" # Production
 SERVER_NAME = socket.gethostname()
 
 def get_mac_address():
     mac = ':'.join(['{:02x}'.format((uuid.getnode() >> ele) & 0xff) for ele in range(0, 8*6, 8)][::-1])
     return mac
 
+def get_public_ip():
+    try:
+        # Get public IP via ipify
+        with httpx.Client(timeout=2.0) as client:
+            return client.get('https://api.ipify.org').text
+    except:
+        return "unknown"
+
+def get_all_ips():
+    ips = []
+    try:
+        for interface, addrs in psutil.net_if_addrs().items():
+            for addr in addrs:
+                if addr.family == socket.AF_INET and not addr.address.startswith('127.'):
+                    ips.append(f"{interface}:{addr.address}")
+    except:
+        pass
+    return ", ".join(ips)
+
 def get_uptime():
-    boot_time = datetime.fromtimestamp(psutil.boot_time())
-    now = datetime.now()
-    delta = now - boot_time
-    days = delta.days
-    hours, remainder = divmod(delta.seconds, 3600)
-    minutes, _ = divmod(remainder, 60)
-    return f"up {days}d {hours}h {minutes}m"
+    try:
+        boot_time = datetime.fromtimestamp(psutil.boot_time())
+        now = datetime.now()
+        delta = now - boot_time
+        days = delta.days
+        hours, remainder = divmod(delta.seconds, 3600)
+        minutes, _ = divmod(remainder, 60)
+        return f"up {days}d {hours}h {minutes}m"
+    except:
+        return "unknown"
 
 def get_detailed_specs():
     specs = {
@@ -31,9 +53,9 @@ def get_detailed_specs():
         "CPU Cores": psutil.cpu_count(logical=True),
         "Total RAM": f"{round(psutil.virtual_memory().total / (1024**3), 2)} GB",
         "Disk Size": f"{round(psutil.disk_usage('/').total / (1024**3), 2)} GB",
-        "OS": os.uname().sysname + " " + os.uname().release
+        "OS": os.uname().sysname + " " + os.uname().release,
+        "All IPs": get_all_ips()
     }
-    # Try to get CPU model on Linux
     try:
         with open("/proc/cpuinfo", "r") as f:
             for line in f:
@@ -45,10 +67,11 @@ def get_detailed_specs():
     return specs
 
 async def send_ping():
+    public_ip = get_public_ip()
     data = {
         "hardware_id": get_mac_address(),
         "server_name": SERVER_NAME,
-        "ip_address": socket.gethostbyname(SERVER_NAME),
+        "ip_address": public_ip if public_ip != "unknown" else socket.gethostbyname(SERVER_NAME),
         "cpu_usage": psutil.cpu_percent(interval=1),
         "mem_usage": psutil.virtual_memory().percent,
         "disk_usage": psutil.disk_usage('/').percent,
