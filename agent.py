@@ -8,8 +8,8 @@ import socket
 from datetime import datetime
 
 # --- CONFIGURATION ---
-SERVER_URL = "http://localhost:8000/api/ping" # Local testing
-# SERVER_URL = "http://13.125.105.188:8000/api/ping" # Production
+# SERVER_URL = "http://localhost:8000/api/ping" # Local testing
+SERVER_URL = "http://13.125.105.188:8000/api/ping" # Production
 SERVER_NAME = socket.gethostname()
 
 def get_mac_address():
