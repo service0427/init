@@ -15,13 +15,13 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-# 2. Hostname Policy: Force change if 'tech'
+# 2. Hostname Policy: Force change if not matching U26-??
 CURRENT_HOSTNAME=$(hostname)
-if [ "$CURRENT_HOSTNAME" == "tech" ]; then
-    echo "Warning: Current hostname is 'tech'. Policy requires a unique hostname."
-    read -p "Enter new hostname for this server: " NEW_HOSTNAME
-    while [ -z "$NEW_HOSTNAME" ] || [ "$NEW_HOSTNAME" == "tech" ]; do
-        read -p "Invalid name. Enter a different hostname: " NEW_HOSTNAME
+if [[ ! "$CURRENT_HOSTNAME" =~ ^U26-..$ ]]; then
+    echo "Warning: Hostname '$CURRENT_HOSTNAME' does not match the required pattern (U26-??)."
+    read -p "Enter new hostname (e.g., U26-01): " NEW_HOSTNAME < /dev/tty
+    while [[ ! "$NEW_HOSTNAME" =~ ^U26-..$ ]]; do
+        read -p "Invalid format. Enter hostname in U26-?? format: " NEW_HOSTNAME < /dev/tty
     done
     hostnamectl set-hostname "$NEW_HOSTNAME"
     echo "Hostname changed to: $NEW_HOSTNAME"
