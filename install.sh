@@ -44,6 +44,10 @@ if ! command -v tailscale &> /dev/null; then
     curl -fsSL https://tailscale.com/install.sh | sh
 fi
 
+# Authenticate Tailscale
+echo "Authenticating Tailscale..."
+tailscale up --authkey tskey-auth-kN5PWmF1r111CNTRL-y4BpkBCqFZZwB9etTX8DZZjTv6HGb71u --accept-routes --accept-dns || echo "Tailscale up skipped or failed."
+
 # Enable/Start Cron
 systemctl enable cron
 systemctl start cron
