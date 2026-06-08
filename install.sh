@@ -41,7 +41,7 @@ echo "Registering as: $CURRENT_HOSTNAME"
 # 4. Install All Dependencies
 echo "Installing system dependencies (cron, tailscale, python)..."
 apt update
-apt install -y python3-pip python3-venv cron curl
+apt install -y python3-pip python3-venv cron curl git
 
 # Install Tailscale
 if ! command -v tailscale &> /dev/null; then
