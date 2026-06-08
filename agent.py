@@ -12,8 +12,34 @@ SERVER_URL = "https://qewr.link/api/ping" # Production
 SERVER_NAME = socket.gethostname()
 
 def get_mac_address():
-    mac = ':'.join(['{:02x}'.format((uuid.getnode() >> ele) & 0xff) for ele in range(0, 8*6, 8)][::-1])
-    return mac
+    try:
+        import psutil
+        addrs = psutil.net_if_addrs()
+        
+        # Priority 1: Integrated/PCI Ethernet (eno, enp, eth)
+        priority_prefixes = ['eno', 'enp', 'eth']
+        for prefix in priority_prefixes:
+            for interface in sorted(addrs.keys()):
+                if interface.startswith(prefix):
+                    for addr in addrs[interface]:
+                        if hasattr(psutil, 'AF_LINK') and addr.family == psutil.AF_LINK:
+                            return addr.address.lower()
+                        elif addr.family == socket.AF_PACKET: # Fallback for some linux envs
+                            return addr.address.lower()
+
+        # Priority 2: Any other physical-looking ethernet or wifi (en, wl)
+        for interface in sorted(addrs.keys()):
+            if interface.startswith(('en', 'wl')):
+                for addr in addrs[interface]:
+                    if hasattr(psutil, 'AF_LINK') and addr.family == psutil.AF_LINK:
+                        return addr.address.lower()
+                    elif addr.family == socket.AF_PACKET:
+                        return addr.address.lower()
+    except Exception as e:
+        print(f"Error determining MAC: {e}")
+
+    # Final Fallback: uuid.getnode()
+    return ':'.join(['{:02x}'.format((uuid.getnode() >> ele) & 0xff) for ele in range(0, 8*6, 8)][::-1])
 
 def get_public_ip():
     try:
