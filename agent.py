@@ -89,6 +89,25 @@ def get_detailed_specs():
                     break
     except:
         pass
+
+    # Check git repository version for nmap_multi_v1
+    git_version = "Not Installed"
+    for base_dir in ["/home/ubuntu", "/root"]:
+        repo_path = os.path.join(base_dir, "nmap_multi_v1")
+        if os.path.exists(os.path.join(repo_path, ".git")):
+            try:
+                import subprocess
+                result = subprocess.run(
+                    ["git", "-C", repo_path, "log", "-1", "--format=%h (%ad) - %s", "--date=short"],
+                    capture_output=True, text=True, check=True
+                )
+                git_version = result.stdout.strip()
+                break
+            except Exception as e:
+                git_version = f"Error: {str(e)}"
+                break
+    specs["nmap_multi_v1 version"] = git_version
+
     return specs
 
 async def send_ping():
