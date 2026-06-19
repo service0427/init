@@ -92,8 +92,9 @@ def get_detailed_specs():
 
     # Check git repository version for nmap_multi_v1
     git_version = "Not Installed"
-    for base_dir in ["/home/ubuntu", "/root"]:
-        repo_path = os.path.join(base_dir, "nmap_multi_v1")
+    import glob
+    paths = glob.glob("/home/*/nmap_multi_v1") + ["/root/nmap_multi_v1"]
+    for repo_path in paths:
         if os.path.exists(os.path.join(repo_path, ".git")):
             try:
                 import subprocess
