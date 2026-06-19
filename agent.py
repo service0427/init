@@ -98,11 +98,27 @@ def get_detailed_specs():
         if os.path.exists(os.path.join(repo_path, ".git")):
             try:
                 import subprocess
+                # Get local version
                 result = subprocess.run(
                     ["git", "-C", repo_path, "log", "-1", "--format=%h (%ad) - %s", "--date=short"],
                     capture_output=True, text=True, check=True
                 )
-                git_version = result.stdout.strip()
+                local_version = result.stdout.strip()
+                local_hash = local_version.split()[0]
+                
+                # Check remote latest commit hash
+                remote_result = subprocess.run(
+                    ["git", "-C", repo_path, "ls-remote", "origin", "HEAD"],
+                    capture_output=True, text=True, timeout=5.0
+                )
+                if remote_result.returncode == 0 and remote_result.stdout:
+                    remote_hash = remote_result.stdout.split()[0][:7]
+                    if local_hash == remote_hash:
+                        git_version = f"{local_version} [Latest]"
+                    else:
+                        git_version = f"{local_version} [Update Available: {remote_hash}]"
+                else:
+                    git_version = f"{local_version} [Remote status unknown]"
                 break
             except Exception as e:
                 git_version = f"Error: {str(e)}"
