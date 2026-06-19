@@ -100,7 +100,7 @@ def get_detailed_specs():
                 import subprocess
                 # Get local version
                 result = subprocess.run(
-                    ["git", "-C", repo_path, "log", "-1", "--format=%h (%ad)", "--date=short"],
+                    ["git", "-c", "safe.directory=*", "-C", repo_path, "log", "-1", "--format=%h (%ad)", "--date=short"],
                     capture_output=True, text=True, check=True
                 )
                 local_version = result.stdout.strip()
@@ -108,7 +108,7 @@ def get_detailed_specs():
                 
                 # Check remote latest commit hash
                 remote_result = subprocess.run(
-                    ["git", "-C", repo_path, "ls-remote", "origin", "HEAD"],
+                    ["git", "-c", "safe.directory=*", "-C", repo_path, "ls-remote", "origin", "HEAD"],
                     capture_output=True, text=True, timeout=5.0
                 )
                 if remote_result.returncode == 0 and remote_result.stdout:
@@ -127,6 +127,21 @@ def get_detailed_specs():
 
     return specs
 
+def get_adb_device_count():
+    try:
+        import subprocess
+        result = subprocess.run(["adb", "devices"], capture_output=True, text=True, timeout=5.0)
+        if result.returncode == 0:
+            lines = result.stdout.strip().split('\n')
+            count = 0
+            for line in lines[1:]:
+                if '\tdevice' in line:
+                    count += 1
+            return count
+    except Exception:
+        pass
+    return 0
+
 async def send_ping():
     public_ip = get_public_ip()
     data = {
@@ -137,7 +152,8 @@ async def send_ping():
         "mem_usage": psutil.virtual_memory().percent,
         "disk_usage": psutil.disk_usage('/').percent,
         "uptime": get_uptime(),
-        "specs": json.dumps(get_detailed_specs())
+        "specs": json.dumps(get_detailed_specs()),
+        "current_devices": get_adb_device_count()
     }
 
     async with httpx.AsyncClient() as client:
