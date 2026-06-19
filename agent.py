@@ -100,7 +100,7 @@ def get_detailed_specs():
                 import subprocess
                 # Get local version
                 result = subprocess.run(
-                    ["git", "-C", repo_path, "log", "-1", "--format=%h (%ad) - %s", "--date=short"],
+                    ["git", "-C", repo_path, "log", "-1", "--format=%h (%ad)", "--date=short"],
                     capture_output=True, text=True, check=True
                 )
                 local_version = result.stdout.strip()

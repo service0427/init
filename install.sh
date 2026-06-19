@@ -15,13 +15,13 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-# 2. Hostname Policy: Detect OS version and check prefix (e.g. U22, U24, U26)
-OS_PREFIX="U"
+# 2. Hostname Policy: Detect OS version and check prefix (e.g. U22-, U24-, U26-)
+OS_PREFIX="U-"
 if [ -f /etc/os-release ]; then
     . /etc/os-release
     if [ "$ID" = "ubuntu" ]; then
         OS_MAJOR_VERSION=$(echo "$VERSION_ID" | cut -d. -f1)
-        OS_PREFIX="U${OS_MAJOR_VERSION}"
+        OS_PREFIX="U${OS_MAJOR_VERSION}-"
     fi
 fi
 
@@ -30,7 +30,7 @@ if [[ ! "$CURRENT_HOSTNAME" =~ ^$OS_PREFIX ]]; then
     echo "Warning: Hostname '$CURRENT_HOSTNAME' does not start with '$OS_PREFIX' for Ubuntu $VERSION_ID."
     read -p "Do you want to proceed with the current hostname? (y/n): " PROCEED < /dev/tty
     if [[ ! "$PROCEED" =~ ^[Yy]$ ]]; then
-        read -p "Enter new hostname (must start with '$OS_PREFIX', e.g., ${OS_PREFIX}-Server01): " NEW_HOSTNAME < /dev/tty
+        read -p "Enter new hostname (must start with '$OS_PREFIX', e.g., ${OS_PREFIX}K01 or ${OS_PREFIX}M01): " NEW_HOSTNAME < /dev/tty
         while [[ ! "$NEW_HOSTNAME" =~ ^$OS_PREFIX ]]; do
             read -p "Invalid format. Hostname must start with '$OS_PREFIX': " NEW_HOSTNAME < /dev/tty
         done
