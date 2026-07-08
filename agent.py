@@ -125,6 +125,42 @@ def get_detailed_specs():
                 break
     specs["nmap_multi_v1 version"] = git_version
 
+    # Read latest ADB recovery logs from home dir
+    recovery_log_path = "/home/tech/nmap_multi_v1/adb_recovery.log"
+    recovery_summary = "No recovery events logged"
+    if os.path.exists(recovery_log_path):
+        try:
+            with open(recovery_log_path, 'r') as f:
+                lines = f.readlines()
+                if lines:
+                    # Capture last 5 recovery lines
+                    recovery_summary = "".join(lines[-5:]).strip()
+        except Exception as e:
+            recovery_summary = f"Error reading recovery log: {str(e)}"
+    specs["adb_recovery_summary"] = recovery_summary
+
+    # Capture ADB device state breakdown (device, unauthorized, offline, other)
+    adb_states = {"device": 0, "unauthorized": 0, "offline": 0, "other": 0}
+    try:
+        import subprocess
+        result = subprocess.run(["adb", "devices"], capture_output=True, text=True, timeout=5.0)
+        if result.returncode == 0:
+            lines = result.stdout.strip().split('\n')
+            for line in lines[1:]:
+                line = line.strip()
+                if not line or line.startswith("*"):
+                    continue
+                parts = line.split()
+                if len(parts) >= 2:
+                    status = parts[1]
+                    if status in adb_states:
+                        adb_states[status] += 1
+                    else:
+                        adb_states["other"] += 1
+    except Exception as e:
+        pass
+    specs["adb_device_states"] = adb_states
+
     return specs
 
 def get_adb_device_count():
