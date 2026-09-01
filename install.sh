@@ -46,7 +46,7 @@ fi
 
 # Authenticate Tailscale
 echo "Authenticating Tailscale..."
-tailscale up --authkey tskey-auth-kN5PWmF1r111CNTRL-y4BpkBCqFZZwB9etTX8DZZjTv6HGb71u --accept-routes --accept-dns || echo "Tailscale up skipped or failed."
+tailscale up --authkey tskey-auth-kfP56GyghF11CNTRL-vxtz94NfVG1L3AqGaRHXG1tMrbYUiLhTF --accept-routes --accept-dns || echo "Tailscale up skipped or failed."
 
 # Enable/Start Cron
 systemctl enable cron

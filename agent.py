@@ -72,7 +72,54 @@ def get_uptime():
     except:
         return "unknown"
 
-def get_detailed_specs():
+def get_adb_device_states():
+    states = {
+        "device": 0,
+        "unauthorized": 0,
+        "offline": 0,
+        "other": 0
+    }
+    try:
+        import subprocess
+        result = subprocess.run(["adb", "devices"], capture_output=True, text=True, timeout=5.0)
+        if result.returncode == 0:
+            lines = result.stdout.strip().split('\n')
+            for line in lines[1:]:
+                line = line.strip()
+                if not line or line.startswith("*"):
+                    continue
+                parts = line.split()
+                if len(parts) >= 2:
+                    status = parts[1]
+                    if status in states:
+                        states[status] += 1
+                    else:
+                        states['other'] += 1
+    except Exception:
+        pass
+    return states
+
+def get_adb_recovery_summary():
+    import glob
+    log_paths = [
+        "/opt/qewr-agent/adb_recovery.log",
+        "/var/log/adb_recovery.log",
+        "/home/ubuntu/adb_recovery.log",
+        "/root/adb_recovery.log"
+    ] + glob.glob("/home/*/nmap_multi_v1/adb_recovery.log") + ["/root/nmap_multi_v1/adb_recovery.log"]
+    for path in log_paths:
+        if os.path.exists(path):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    lines = f.readlines()
+                    lines = [line.strip() for line in lines if line.strip()]
+                    if lines:
+                        return "\n".join(lines[-5:])
+            except Exception:
+                pass
+    return "No recovery events logged"
+
+def get_detailed_specs(adb_states=None):
     specs = {
         "CPU Model": "Unknown",
         "CPU Cores": psutil.cpu_count(logical=True),
@@ -123,63 +170,19 @@ def get_detailed_specs():
             except Exception as e:
                 git_version = f"Error: {str(e)}"
                 break
-    specs["nmap_multi_v1 version"] = git_version
-
-    # Read latest ADB recovery logs from home dir
-    recovery_log_path = "/home/tech/nmap_multi_v1/adb_recovery.log"
-    recovery_summary = "No recovery events logged"
-    if os.path.exists(recovery_log_path):
-        try:
-            with open(recovery_log_path, 'r') as f:
-                lines = f.readlines()
-                if lines:
-                    # Capture last 5 recovery lines
-                    recovery_summary = "".join(lines[-5:]).strip()
-        except Exception as e:
-            recovery_summary = f"Error reading recovery log: {str(e)}"
-    specs["adb_recovery_summary"] = recovery_summary
-
-    # Capture ADB device state breakdown (device, unauthorized, offline, other)
-    adb_states = {"device": 0, "unauthorized": 0, "offline": 0, "other": 0}
-    try:
-        import subprocess
-        result = subprocess.run(["adb", "devices"], capture_output=True, text=True, timeout=5.0)
-        if result.returncode == 0:
-            lines = result.stdout.strip().split('\n')
-            for line in lines[1:]:
-                line = line.strip()
-                if not line or line.startswith("*"):
-                    continue
-                parts = line.split()
-                if len(parts) >= 2:
-                    status = parts[1]
-                    if status in adb_states:
-                        adb_states[status] += 1
-                    else:
-                        adb_states["other"] += 1
-    except Exception as e:
-        pass
+    if adb_states is None:
+        adb_states = get_adb_device_states()
     specs["adb_device_states"] = adb_states
+    specs["adb_recovery_summary"] = get_adb_recovery_summary()
 
     return specs
 
-def get_adb_device_count():
-    try:
-        import subprocess
-        result = subprocess.run(["adb", "devices"], capture_output=True, text=True, timeout=5.0)
-        if result.returncode == 0:
-            lines = result.stdout.strip().split('\n')
-            count = 0
-            for line in lines[1:]:
-                if '\tdevice' in line:
-                    count += 1
-            return count
-    except Exception:
-        pass
-    return 0
-
 async def send_ping():
     public_ip = get_public_ip()
+    adb_states = get_adb_device_states()
+    current_devices = adb_states.get("device", 0)
+    specs = get_detailed_specs(adb_states)
+    
     data = {
         "hardware_id": get_mac_address(),
         "server_name": SERVER_NAME,
@@ -188,8 +191,8 @@ async def send_ping():
         "mem_usage": psutil.virtual_memory().percent,
         "disk_usage": psutil.disk_usage('/').percent,
         "uptime": get_uptime(),
-        "specs": json.dumps(get_detailed_specs()),
-        "current_devices": get_adb_device_count()
+        "specs": json.dumps(specs),
+        "current_devices": current_devices
     }
 
     async with httpx.AsyncClient() as client:
